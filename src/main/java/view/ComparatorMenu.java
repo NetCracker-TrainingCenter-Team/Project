@@ -1,3 +1,5 @@
+package view;
+
 import java.util.Comparator;
 
 public class ComparatorMenu implements Comparator<Object[]> {
