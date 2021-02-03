@@ -42,7 +42,7 @@ public class ViewSwing extends JFrame {
     private void begin(){
         frame = new JFrame("Меню");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setPreferredSize(new Dimension(550, 350));
+        frame.setPreferredSize(new Dimension(550, 370));
 
         frame.addWindowListener(new WindowAdapter() {
             @Override
@@ -325,7 +325,7 @@ public class ViewSwing extends JFrame {
         viewFull.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    viewFullMenu();
+                    viewFullMenu(0);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -379,7 +379,7 @@ public class ViewSwing extends JFrame {
     /**
      * Метод для просмотра всего меню
      */
-    private void viewFullMenu() throws IOException {
+    private void viewFullMenu(int o) throws IOException {
         JPanel plain = new JPanel();
         plain.setBackground(new Color(176, 224, 230));
 
@@ -424,7 +424,14 @@ public class ViewSwing extends JFrame {
         JButton cancel = new JButton("Назад");
         cancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                view();
+                if (o == 1) {
+                    try {
+                        addDish();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                else view();
             }
         });
         plain.add(table_scroll);
@@ -620,10 +627,8 @@ public class ViewSwing extends JFrame {
     private void addDish() throws IOException {
         JPanel plain = new JPanel();
         plain.setBackground(new Color(176, 224, 230));
-        GridLayout layout = new GridLayout(9, 2, 5, 7);
+        GridLayout layout = new GridLayout(10, 0, 5, 7);
         plain.setLayout(layout);
-
-        //plain.add(new JLabel(""));
 
         JTextField name = new JTextField(10);
         name.setFont(new Font("Dialog", Font.PLAIN, 20));
@@ -638,7 +643,6 @@ public class ViewSwing extends JFrame {
                 }
             }
         });
-
 
         if (client.updateCheck()) update();
         String[] category = client.print("printCategory").split("\\*");
@@ -679,25 +683,41 @@ public class ViewSwing extends JFrame {
         JButton add = new JButton("Добавить");
         add.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Dish dish = new Dish(name.getText(),
-                        new Category(comboBox.getSelectedItem().toString()),
-                        Double.parseDouble(price.getText()));
+                if (isName(name.getText()) && isName(comboBox.getSelectedItem().toString()) && isPrice(price.getText()))
+                {
+                    Dish dish = new Dish(name.getText(),
+                            new Category(comboBox.getSelectedItem().toString()),
+                            Double.parseDouble(price.getText()));
+                    try {
+                        if (client.updateCheck()) update();
+                        String res = client.addData("addData", dish);
+                        if (res.equals("Yes")) {
+                            JOptionPane.showMessageDialog(null, "Добавление прошло успешно");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Такое блюдо уже есть!");
+                        }
+                        addDish();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(null, "Что-то пошло не так! Проверьте правильность введеных данных!");
+                }
+            }
+        });
+        plain.add(add);
+
+        JButton menu = new JButton("Посмотреть все меню");
+        menu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 try {
-                    if (client.updateCheck()) update();
-                    String res = client.addData("addData",dish);
-                    if (res.equals("Yes")){
-                        JOptionPane.showMessageDialog(null, "Добавление прошло успешно");
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Такое блюдо уже есть!");
-                    }
-                    addDish();
+                    viewFullMenu(1);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
         });
-        plain.add(add);
+        plain.add(menu);
 
         JButton cancel = new JButton("Назад");
         cancel.addActionListener(new ActionListener() {
@@ -732,7 +752,6 @@ public class ViewSwing extends JFrame {
         JTextField name = new JTextField(25);
         name.setFont(new Font("Dialog", Font.PLAIN, 14));
         name.setHorizontalAlignment(JTextField.LEFT);
-
         name.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -750,13 +769,16 @@ public class ViewSwing extends JFrame {
         add.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if (client.updateCheck()) update();
-                    String res = client.addData("addCategory",name.getText());
-                    if (res.equals("Yes")){
-                        JOptionPane.showMessageDialog(null, "Добавление прошло успешно");
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Такая категория уже есть!");
+                    if (isName(name.getText())) {
+                        if (client.updateCheck()) update();
+                        String res = client.addData("addCategory", name.getText());
+                        if (res.equals("Yes")) {
+                            JOptionPane.showMessageDialog(null, "Добавление прошло успешно");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Такая категория уже есть!");
+                        }
+                    } else{
+                        JOptionPane.showMessageDialog(null, "Что-то пошло не так! Проверьте правильность введеных данных!");
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
