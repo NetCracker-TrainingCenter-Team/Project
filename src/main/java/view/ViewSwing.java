@@ -106,7 +106,6 @@ public class ViewSwing extends JFrame {
      * Метод окна для создания нового файла
      */
     private void newFile(){
-
         JPanel plain = new JPanel();
         plain.setBackground(new Color(176, 224, 230));
         GridLayout layout = new GridLayout(3, 0, 5, 15);
@@ -149,6 +148,44 @@ public class ViewSwing extends JFrame {
         String s = "";
         if (result == JFileChooser.APPROVE_OPTION ){
             if (k == 0) {
+                if (file.length() == 0) {
+                    JFrame frame = new JFrame();
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.setPreferredSize(new Dimension(250, 150));
+
+                    JPanel panel = new JPanel();
+
+                    panel.add(new JLabel("<html>Ваш файл пустой!<br> Создайте новое меню или выберите не пустой файл</html>"));
+
+                    JButton yes = new JButton("Новое меню");
+                    yes.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            try {
+                                client.file("newDish");
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
+                            newFile();
+                            frame.setVisible(false);
+                        }
+                    });
+                    JButton no = new JButton("Выбрать другой файл");
+                    no.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            try {
+                                download(0);
+                                frame.setVisible(false);
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    });
+                    panel.add(yes);
+                    panel.add(no);
+                    frame.add(panel);
+                    frame.pack();
+                    frame.setVisible(true);
+                }
                 s = client.file(file.getName());
                 if (s.equals("yes")){
                     JFrame frame = new JFrame();
@@ -163,12 +200,7 @@ public class ViewSwing extends JFrame {
                     yes.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             try {
-                                if (file.length() == 0){
-                                    newFile(); return;
-                                }
-                                else {
-                                    String s = client.file("newData", file.getAbsolutePath());
-                                }
+                                String s = client.file("newData", file.getAbsolutePath());
                                 frame.setVisible(false);
                             } catch (IOException ex) {
                                 ex.printStackTrace();
@@ -193,17 +225,9 @@ public class ViewSwing extends JFrame {
                     frame.setVisible(true);
                 }
                 else if (s.equals("not")){
-                    if (file.length() == 0){
-                        newFile(); return;
-                    }
-                    else {
-                        client.serialize(file.getAbsolutePath());
-                        s = client.file0();
-                    }
+                    client.serialize(file.getAbsolutePath());
+                    s = client.file0();
                 }
-            } else if (k == 1){
-                client.save("saveNewFile",file.getAbsolutePath());
-                JOptionPane.showMessageDialog(null, "Сохранение прошло успешно!");
             } else{
                 s  = client.addFile("addFile",file.getAbsolutePath());
                 if (s.equals("No")){
@@ -971,12 +995,62 @@ public class ViewSwing extends JFrame {
         });
         plain.add(save);
 
-        JButton addCategory = new JButton("Сохранить как копию");
+        JButton addCategory = new JButton("Сохранить как копию на сервере");
         addCategory.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(null, "Выберите файл для сохранения");
+                saveS();
+            }
+        });
+        plain.add(addCategory);
+
+        JButton cancel = new JButton("Назад");
+        cancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                menu();
+            }
+        });
+        plain.add(cancel);
+
+        JPanel plain0 = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        plain0.add(plain);
+        plain0.setBackground(new Color(176, 224, 230));
+
+        frame.getContentPane().removeAll();
+        frame.getContentPane().invalidate();
+        frame.getContentPane().add(plain0);
+        frame.getContentPane().revalidate();
+    }
+
+    /**
+     * Метод окна с сохранением на сервере
+     */
+    private void saveS(){
+        JPanel plain = new JPanel();
+        plain.setBackground(new Color(176, 224, 230));
+        GridLayout layout = new GridLayout(5, 0, 5, 15);
+        plain.setLayout(layout);
+
+        plain.add(new JLabel("<html> <br> <br><br></html>"));
+
+        plain.add(new JLabel("Введите имя файла (в виде имяфайлa.json):"));
+        JTextField name = new JTextField(10);
+        name.setFont(new Font("Dialog", Font.PLAIN, 20));
+        name.setHorizontalAlignment(JTextField.LEFT);
+        plain.add(name);
+
+        JButton addCategory = new JButton("Сохранить");
+        addCategory.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 try {
-                    download(1);
+                    if (isFile(name.getText())) {
+                        if (client.updateCheck()) update();
+                        client.save("saveNewFile", name.getText());
+                        JOptionPane.showMessageDialog(null, "Файл сохранен!");
+                        saveS();
+                    }
+                    else{
+                        JOptionPane.showMessageDialog(null, "Неверное имя файла");
+                    }
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -987,7 +1061,7 @@ public class ViewSwing extends JFrame {
         JButton cancel = new JButton("Назад");
         cancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                menu();
+                save();
             }
         });
         plain.add(cancel);
@@ -1156,9 +1230,9 @@ public class ViewSwing extends JFrame {
      * Метод окна на случай обновления файла другим пользователем
      */
     public void update(){
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setPreferredSize(new Dimension(250, 250));
+        JFrame frame0 = new JFrame();
+        frame0.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame0.setPreferredSize(new Dimension(250, 250));
         JPanel plain = new JPanel();
         plain.setBackground(new Color(176, 224, 230));
         plain.setLayout(new BoxLayout(plain, BoxLayout.PAGE_AXIS));
@@ -1170,7 +1244,10 @@ public class ViewSwing extends JFrame {
         yes.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
+                    if (client.updateCheck()) update();
                     client.newFile("openNewFile");
+                    menu();
+                    frame0.setVisible(false);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -1182,20 +1259,57 @@ public class ViewSwing extends JFrame {
         yesCopy.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JOptionPane.showMessageDialog(null, "Выберите файл для сохранения");
-                try {
-                    download(1);
-                    client.newFile("openNewFile");
-                    frame.setVisible(false);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+                JPanel plain = new JPanel();
+                plain.setBackground(new Color(176, 224, 230));
+                GridLayout layout = new GridLayout(5, 0, 5, 15);
+                plain.setLayout(layout);
+
+                plain.add(new JLabel("<html> <br> <br><br></html>"));
+
+                plain.add(new JLabel("Введите имя файла(в виде имя.json):"));
+                JTextField name = new JTextField(10);
+                name.setFont(new Font("Dialog", Font.PLAIN, 20));
+                name.setHorizontalAlignment(JTextField.LEFT);
+                plain.add(name);
+
+                JButton addCategory = new JButton("Сохранить");
+                addCategory.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                        if (isFile(name.getText())) {
+                            if (client.updateCheck()) update();
+                            client.save("saveNewFile", name.getText());
+                            JOptionPane.showMessageDialog(null, "Файл сохранен!");
+                            if (client.updateCheck()) update();
+                            client.newFile("openNewFile");
+                            menu();
+                            frame0.setVisible(false);
+                        }
+                        else{
+                            JOptionPane.showMessageDialog(null, "Неверное имя файла");
+                        }
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+                plain.add(addCategory);
+
+                JPanel plain0 = new JPanel(new FlowLayout(FlowLayout.CENTER));
+                plain0.add(plain);
+                plain0.setBackground(new Color(176, 224, 230));
+
+                frame0.getContentPane().removeAll();
+                frame0.getContentPane().invalidate();
+                frame0.getContentPane().add(plain0);
+                frame0.getContentPane().revalidate();
             }
         });
 
         JButton no = new JButton("Нет");
         no.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                frame.setVisible(false);
+                frame0.setVisible(false);
             }
         });
 
@@ -1203,9 +1317,9 @@ public class ViewSwing extends JFrame {
         plain.add(yesCopy);
         plain.add(no);
 
-        frame.add(plain);
-        frame.pack();
-        frame.setVisible(true);
+        frame0.add(plain);
+        frame0.pack();
+        frame0.setVisible(true);
     }
 
     /**
@@ -1233,6 +1347,13 @@ public class ViewSwing extends JFrame {
             return true;
         }
        return false;
+    }
+
+    public static boolean isFile(String str){
+        if (str.matches(".{0,20}[.json]$")){
+            return true;
+        }
+        return false;
     }
 
 
